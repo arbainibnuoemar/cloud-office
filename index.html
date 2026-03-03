@@ -6,6 +6,9 @@
     <title>Cloud Office</title>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <style>
         :root {
             --google-blue: #1a73e8;
@@ -612,11 +615,12 @@
 <div id="login-overlay">
     <div id="login-card">
         <span class="logo-text" style="font-family:'Google Sans';">Cloud <span style="color:var(--google-blue);font-weight:700;">Office</span></span>
-        <p style="margin-bottom:24px;color:var(--text-secondary);">Silakan login untuk mengakses pekerjaan Anda.</p>
-        <input type="text" id="login-user" class="login-input" placeholder="Username">
-        <input type="password" id="login-pass" class="login-input" placeholder="Password">
-        <button id="login-btn" class="login-btn">Login</button>
-        <div id="login-error" class="login-error">Username atau Password salah!</div>
+        <p style="margin-bottom:24px;color:var(--text-secondary);">Silakan login dengan akun Google terdaftar untuk mengakses pekerjaan Anda.</p>
+        <button id="login-google-btn" class="login-btn" style="display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#757575;border:1px solid #ddd;">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.85 2.07-1.8 2.81v2.33h2.9c1.7-1.57 2.7-3.89 2.7-6.77z" fill="#4285F4"/><path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.33c-.8.54-1.83.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.95v2.4C2.43 16.07 5.48 18 9 18z" fill="#34A853"/><path d="M3.96 10.64c-.18-.54-.28-1.12-.28-1.64s.1-1.1.28-1.64V4.96H.95C.35 6.17 0 7.55 0 9s.35 2.83.95 4.04l3.01-2.4z" fill="#FBBC05"/><path d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.42 0 9 0 5.48 0 2.43 1.93.95 4.96L3.96 7.36c.71-2.13 2.7-3.78 5.04-3.78z" fill="#EA4335"/></svg>
+            Login with Google
+        </button>
+        <div id="login-error" class="login-error">Akses Ditolak! Email Anda tidak terdaftar.</div>
     </div>
 </div>
 
@@ -721,38 +725,66 @@
 </div>
 
 <script>
-// --- AUTH ---
-const AUTH_KEY = 'co_logged_in';
-const USERNAME = 'admin';
-const PASSWORD = '1234';
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCSNIQ1zifQElO5Zscfdk6GpOtQ_4KL48g",
+  authDomain: "cloud-office-369e7.firebaseapp.com",
+  projectId: "cloud-office-369e7",
+  storageBucket: "cloud-office-369e7.firebasestorage.app",
+  messagingSenderId: "247548259083",
+  appId: "1:247548259083:web:b4be2cc502b985cddf900e",
+  measurementId: "G-JP2KTBTWQC"
+};
 
-function checkAuth() {
-    if (localStorage.getItem(AUTH_KEY) === 'true') {
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();
+
+// --- WHITELIST EMAIL ---
+const ALLOWED_EMAILS = [
+    'arbain.ibnuoemar@gmail.com'
+    // Tambahkan email lain di sini, misal: 'teman@gmail.com'
+];
+
+function checkAuth(user) {
+    if (user && ALLOWED_EMAILS.includes(user.email)) {
         document.body.classList.add('logged-in');
+        // Update Avatar Initial
+        const avatarEl = document.querySelector('.avatar');
+        if (avatarEl && user.displayName) {
+            avatarEl.textContent = user.displayName.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+            avatarEl.title = user.email;
+        }
     } else {
         document.body.classList.remove('logged-in');
+        if (user) {
+            // Jika login tapi email tidak terdaftar
+            alert('Akses Ditolak! Email ' + user.email + ' tidak terdaftar.');
+            auth.signOut();
+        }
     }
 }
 
-document.getElementById('login-btn').addEventListener('click', () => {
-    const user = document.getElementById('login-user').value;
-    const pass = document.getElementById('login-pass').value;
-    if (user === USERNAME && pass === PASSWORD) {
-        localStorage.setItem(AUTH_KEY, 'true');
-        checkAuth();
-    } else {
-        document.getElementById('login-error').style.display = 'block';
-    }
+// Listen for auth state changes
+auth.onAuthStateChanged(user => {
+    checkAuth(user);
+});
+
+document.getElementById('login-google-btn').addEventListener('click', () => {
+    auth.signInWithPopup(provider).catch(error => {
+        console.error(error);
+        alert('Gagal Login: ' + error.message);
+    });
 });
 
 document.getElementById('logout-btn').addEventListener('click', () => {
     if (confirm('Apakah Anda yakin ingin logout?')) {
-        localStorage.removeItem(AUTH_KEY);
-        location.reload();
+        auth.signOut().then(() => {
+            location.reload();
+        });
     }
 });
-
-checkAuth();
 
 // --- CONFIG ---
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYxwzOYBJG13GgkNusbTw_0Nf_7gLa-OqgiU7P792b3JUk84GuN2vbUh72AeCWkSco/exec';
