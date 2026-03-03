@@ -1,0 +1,50 @@
+==================================================
+PANDUAN MEMBANGUN PWA AMAN DENGAN GOOGLE AUTH
+==================================================
+Proyek: Cloud Office
+Teknologi: HTML5, PWA, Firebase Auth, GitHub Pages
+
+LANGKAH 1: PERSIAPAN FRONT-END (PWA)
+------------------------------------
+1. Buat file 'index.html' sebagai tampilan utama.
+2. Buat file 'manifest.json' untuk identitas aplikasi (ikon, warna, nama).
+3. Buat file 'sw.js' (Service Worker) agar aplikasi bisa berjalan offline.
+4. Daftarkan Service Worker di dalam 'index.html'.
+
+LANGKAH 2: SETUP FIREBASE (KEAMANAN)
+------------------------------------
+1. Buka console.firebase.google.com, buat project baru.
+2. Tambahkan aplikasi "Web" (ikon </>) dan copy 'firebaseConfig'.
+3. Di menu Authentication:
+   - Klik 'Get Started'.
+   - Di tab 'Sign-in Method', aktifkan provider 'Google'.
+   - Pilih email support Anda, klik 'Save'.
+4. Di tab 'Settings' -> 'Authorized Domains':
+   - Tambahkan domain tempat aplikasi di-host (misal: username.github.io).
+
+LANGKAH 3: IMPLEMENTASI KODE DI INDEX.HTML
+------------------------------------------
+1. Masukkan SDK Firebase (compat version) di bagian <head>.
+2. Buat daftar email yang diizinkan (Whitelist):
+   const ALLOWED_EMAILS = ['emailanda@gmail.com'];
+3. Gunakan fungsi 'auth.onAuthStateChanged' untuk mengecek status login.
+4. Jika user login tapi emailnya TIDAK ada di whitelist, paksa logout:
+   auth.signOut();
+
+LANGKAH 4: DEPLOY KE GITHUB PAGES
+---------------------------------
+1. Push kode ke GitHub (index.html, manifest.json, sw.js, .nojekyll).
+2. Di Settings Repository -> Pages:
+   - Pilih branch 'main' sebagai source.
+   - Aktifkan GitHub Pages.
+
+CATATAN KEAMANAN:
+-----------------
+Sistem ini menggunakan Google OAuth 2.0 yang sangat aman untuk proses otentikasi.
+Namun, karena GitHub Pages bersifat statis, sistem ini hanya "menutup tampilan"
+sebelum login berhasil. Untuk keamanan tingkat tinggi (Data Terenkripsi),
+data harus disimpan di database (seperti Firebase Firestore) dengan
+aturan "Security Rules" yang ketat.
+
+Dibuat oleh: Gemini CLI
+Tanggal: 3 Maret 2026
